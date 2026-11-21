@@ -49,6 +49,9 @@
           <a href="{% url 'inventory:receive_stock' %}" class="nav-link {% if 'receive' in request.path %}active{% endif %}">
             <span class="icon">📥</span> รับสินค้าเข้า
           </a>
+          <a href="{% url 'inventory:issue_stock' %}" class="nav-link {% if 'issue' in request.path %}active{% endif %}">
+            <span class="icon">📤</span> ตัดจ่ายสินค้า
+          </a>
           <a href="{% url 'inventory:movements' %}" class="nav-link {% if 'movements' in request.path %}active{% endif %}">
             <span class="icon">📋</span> ประวัติสต็อก
           </a>

@@ -66,7 +66,7 @@ def request_detail(request, pk):
     user = request.user
     req = get_object_or_404(
         RequisitionRequest.objects.select_related('branch', 'requested_by', 'decided_by')
-        .prefetch_related('items__product'),
+        .prefetch_related('items__product', 'items__product__central_stock'),
         pk=pk
     )
 
@@ -74,7 +74,24 @@ def request_detail(request, pk):
     if user.is_requester and req.branch_id != user.branch_id:
         raise PermissionDenied
 
-    context = {'req': req}
+    items_data = []
+    for item in req.items.all():
+        cs = getattr(item.product, 'central_stock', None)
+        avail = cs.quantity if cs else 0
+        is_short = avail < item.qty_requested
+        suggested = min(item.qty_requested, avail)
+        items_data.append({
+            'item': item,
+            'central_stock': cs,
+            'available': avail,
+            'is_short': is_short,
+            'suggested': suggested,
+        })
+
+    context = {
+        'req': req,
+        'items_data': items_data,
+    }
     return render(request, 'requisitions/request_detail.html', context)
 
 

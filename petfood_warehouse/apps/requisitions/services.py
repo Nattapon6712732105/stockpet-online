@@ -205,3 +205,33 @@ def receive_stock(product_id: int, quantity: int, admin_user, note: str = '') ->
     )
 
     return stock
+
+
+@transaction.atomic
+def issue_stock(product_id: int, quantity: int, admin_user, note: str = '') -> CentralStock:
+    """
+    ตัดจ่ายสินค้าออกจากคลังกลางโดยตรง (เช่น สินค้าชำรุด, เสียหาย, เบิกใช้ภายใน)
+    """
+    if not admin_user.is_admin:
+        raise ValidationError('เฉพาะผู้ดูแลระบบเท่านั้นที่ตัดจ่ายสินค้าได้')
+    if quantity <= 0:
+        raise ValidationError('จำนวนที่ตัดต้องมากกว่า 0')
+
+    stock = CentralStock.objects.select_for_update().get(product_id=product_id)
+    if stock.quantity < quantity:
+        raise ValidationError(f'สต็อกไม่เพียงพอ (มีอยู่ {stock.quantity} {stock.product.unit})')
+
+    stock.quantity -= quantity
+    stock.save(update_fields=['quantity'])
+
+    StockMovement.objects.create(
+        product=stock.product,
+        movement_type=StockMovement.MovementType.ISSUE,
+        qty_change=-quantity,
+        balance_after=stock.quantity,
+        request=None,
+        by_user=admin_user,
+        note=note or 'ตัดจ่ายสินค้าออกจากคลังกลาง',
+    )
+
+    return stock

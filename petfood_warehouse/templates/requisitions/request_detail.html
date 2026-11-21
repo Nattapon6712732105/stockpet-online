@@ -44,50 +44,123 @@
           {% endif %}
         </div>
 
-        <!-- รายการสินค้า -->
-        <div class="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>สินค้า</th>
-                <th style="text-align:right;">ขอ</th>
-                <th style="text-align:right;">อนุมัติ</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for item in req.items.all %}
-              <tr>
-                <td>{{ item.product.name }}</td>
-                <td class="qty-cell" style="text-align:right;">
-                  {{ item.qty_requested }} {{ item.product.unit }}
-                </td>
-                <td class="qty-cell" style="text-align:right;">
-                  {% if item.qty_approved is not None %}
-                    <span style="color:{% if item.qty_approved == item.qty_requested %}var(--ok){% elif item.qty_approved == 0 %}var(--danger){% else %}var(--warn){% endif %};">
-                      {{ item.qty_approved }} {{ item.product.unit }}
-                    </span>
-                  {% else %}
-                    <span class="text-soft">—</span>
-                  {% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+        {% if user.is_admin and req.is_pending %}
+          <!-- ฟอร์มอนุมัติและปรับตัดสต็อกสินค้าสำหรับ Admin -->
+          <form method="post" action="{% url 'requisitions:approve' req.pk %}">
+            {% csrf_token %}
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>สินค้า</th>
+                    <th style="text-align:right;">คลังกลางคงเหลือ</th>
+                    <th style="text-align:right;">ขอ</th>
+                    <th style="text-align:center;min-width:180px;">ตัดจ่าย / อนุมัติ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for row in items_data %}
+                  {% with item=row.item %}
+                  <tr {% if row.is_short %}style="background:rgba(254, 243, 205, 0.4);"{% endif %}>
+                    <td>
+                      <strong>{{ item.product.name }}</strong>
+                      <div class="text-sm text-soft">{{ item.product.sku }} · {{ item.product.category.name }}</div>
+                    </td>
+                    <td class="qty-cell" style="text-align:right;">
+                      <span {% if row.available == 0 %}style="color:var(--danger);"{% elif row.is_short %}style="color:var(--warn);"{% else %}style="color:var(--ok);"{% endif %}>
+                        {{ row.available }}
+                      </span>
+                      <span class="text-soft text-sm">{{ item.product.unit }}</span>
+                      {% if row.is_short %}
+                        <div><span class="badge badge-warn" style="font-size:0.7rem;padding:1px 6px;">⚠️ สต็อกขาด</span></div>
+                      {% endif %}
+                    </td>
+                    <td class="qty-cell" style="text-align:right;">
+                      {{ item.qty_requested }} <span class="text-soft text-sm">{{ item.product.unit }}</span>
+                    </td>
+                    <td style="text-align:center;">
+                      <div class="qty-control" style="display:inline-flex;align-items:center;gap:4px;">
+                        <button type="button" class="btn btn-secondary btn-sm qty-minus" style="padding:4px 8px;min-height:30px;">−</button>
+                        <input type="number"
+                               name="approved_{{ item.id }}"
+                               id="appr_{{ item.id }}"
+                               class="form-control qty-input"
+                               value="{{ row.suggested }}"
+                               min="0"
+                               max="{{ item.qty_requested }}"
+                               style="width:75px;text-align:center;font-weight:700;">
+                        <button type="button" class="btn btn-secondary btn-sm qty-plus" style="padding:4px 8px;min-height:30px;">+</button>
+                      </div>
+                      <div style="margin-top:4px;display:flex;gap:4px;justify-content:center;">
+                        <button type="button" class="btn btn-sm btn-outline" style="padding:1px 6px;min-height:22px;font-size:0.7rem;" onclick="document.getElementById('appr_{{ item.id }}').value={{ item.qty_requested }}">เต็มจำนวน</button>
+                        {% if row.is_short and row.available > 0 %}
+                          <button type="button" class="btn btn-sm btn-outline" style="padding:1px 6px;min-height:22px;font-size:0.7rem;" onclick="document.getElementById('appr_{{ item.id }}').value={{ row.available }}">ตามที่มี ({{ row.available }})</button>
+                        {% endif %}
+                        <button type="button" class="btn btn-sm btn-outline" style="padding:1px 6px;min-height:22px;font-size:0.7rem;" onclick="document.getElementById('appr_{{ item.id }}').value=0">ไม่ตัด (0)</button>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endwith %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
 
-    <!-- ปุ่มดำเนินการ -->
-    <div class="flex gap-2" style="flex-wrap:wrap;">
-      {% if user.is_admin and req.is_pending %}
-        <a href="{% url 'requisitions:approve' req.pk %}" class="btn btn-primary">✅ อนุมัติ</a>
-        <a href="{% url 'requisitions:reject' req.pk %}" class="btn btn-danger">❌ ปฏิเสธ</a>
-      {% endif %}
-      {% if req.is_pending and req.requested_by == user %}
-        <a href="{% url 'requisitions:cancel' req.pk %}" class="btn btn-outline">🚫 ยกเลิก</a>
-      {% endif %}
-      <a href="{% url 'requisitions:list' %}" class="btn btn-secondary">← กลับ</a>
+            <!-- ปุ่มดำเนินการสำหรับ Admin -->
+            <div class="flex gap-2 mt-4" style="flex-wrap:wrap;align-items:center;">
+              <button type="submit" class="btn btn-primary" style="font-weight:600;">
+                ✅ อนุมัติตามจำนวนที่ระบุ (ตัดสต็อกคลังกลาง)
+              </button>
+              <a href="{% url 'requisitions:reject' req.pk %}" class="btn btn-danger">
+                ❌ ปฏิเสธคำร้อง
+              </a>
+              <a href="{% url 'requisitions:list' %}" class="btn btn-secondary">
+                ← กลับ
+              </a>
+            </div>
+          </form>
+        {% else %}
+          <!-- แสดงรายการสินค้าทั่วไป (สำหรับคำร้องที่ตัดสินแล้ว หรือผู้ยื่นคำร้อง) -->
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>สินค้า</th>
+                  <th style="text-align:right;">ขอ</th>
+                  <th style="text-align:right;">อนุมัติ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for item in req.items.all %}
+                <tr>
+                  <td>{{ item.product.name }}</td>
+                  <td class="qty-cell" style="text-align:right;">
+                    {{ item.qty_requested }} {{ item.product.unit }}
+                  </td>
+                  <td class="qty-cell" style="text-align:right;">
+                    {% if item.qty_approved is not None %}
+                      <span style="color:{% if item.qty_approved == item.qty_requested %}var(--ok){% elif item.qty_approved == 0 %}var(--danger){% else %}var(--warn){% endif %};">
+                        {{ item.qty_approved }} {{ item.product.unit }}
+                      </span>
+                    {% else %}
+                      <span class="text-soft">—</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- ปุ่มดำเนินการสำหรับ Requester หรือรายการที่เสร็จแล้ว -->
+          <div class="flex gap-2 mt-4" style="flex-wrap:wrap;">
+            {% if req.is_pending and req.requested_by == user %}
+              <a href="{% url 'requisitions:cancel' req.pk %}" class="btn btn-outline">🚫 ยกเลิก</a>
+            {% endif %}
+            <a href="{% url 'requisitions:list' %}" class="btn btn-secondary">← กลับ</a>
+          </div>
+        {% endif %}
+      </div>
     </div>
   </div>
 

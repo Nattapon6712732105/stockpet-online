@@ -151,3 +151,24 @@ class ApproveRequestTest(TestCase):
         self.assertIsNotNone(mov)
         self.assertEqual(mov.qty_change, 50)
         self.assertEqual(mov.balance_after, 150)
+
+    def test_issue_stock(self):
+        """ตัดจ่ายสินค้าออกจากคลังกลาง"""
+        from apps.requisitions.services import issue_stock
+        issue_stock(self.product.id, 20, self.admin, note='สินค้าชำรุด')
+
+        self.stock.refresh_from_db()
+        self.assertEqual(self.stock.quantity, 80)
+
+        mov = StockMovement.objects.filter(
+            product=self.product, movement_type=StockMovement.MovementType.ISSUE
+        ).first()
+        self.assertIsNotNone(mov)
+        self.assertEqual(mov.qty_change, -20)
+        self.assertEqual(mov.balance_after, 80)
+
+    def test_issue_stock_exceeds_available(self):
+        """ตัดจ่ายสินค้าเกินสต็อกที่มีต้อง raise ValidationError"""
+        from apps.requisitions.services import issue_stock
+        with self.assertRaises(ValidationError):
+            issue_stock(self.product.id, 500, self.admin, note='เกินสต็อก')

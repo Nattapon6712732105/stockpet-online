@@ -88,6 +88,34 @@ def receive_stock_view(request):
 
 
 @admin_required
+def issue_stock_view(request):
+    """ตัดจ่ายสินค้าออกจากคลังกลางโดยตรง (admin)"""
+    products = Product.objects.filter(is_active=True).select_related('central_stock', 'category')
+
+    if request.method == 'POST':
+        product_id = request.POST.get('product_id')
+        quantity = request.POST.get('quantity', 0)
+        reason = request.POST.get('reason', '').strip()
+        note = request.POST.get('note', '').strip()
+
+        full_note = f'[{reason}] {note}' if reason else note
+
+        try:
+            from apps.requisitions.services import issue_stock
+            stock = issue_stock(int(product_id), int(quantity), request.user, full_note)
+            messages.success(
+                request,
+                f'ตัดจ่าย {stock.product.name} ออกจากคลังแล้ว {quantity} {stock.product.unit} '
+                f'(คงเหลือ {stock.quantity} {stock.product.unit})'
+            )
+            return redirect('inventory:issue_stock')
+        except Exception as e:
+            messages.error(request, str(e))
+
+    return render(request, 'inventory/issue_stock.html', {'products': products})
+
+
+@admin_required
 def stock_movement_list(request):
     """ประวัติการเคลื่อนไหวสต็อก"""
     movements = StockMovement.objects.select_related(
