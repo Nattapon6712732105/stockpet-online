@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block page_title %}ปฏิเสธคำร้อง{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:500px;">
+  <div class="card-header">
+    <span class="card-title" style="color:var(--danger);">❌ ปฏิเสธคำร้อง {{ req.code }}</span>
+  </div>
+  <div class="card-body">
+    <div class="alert alert-warning mb-4">
+      ⚠️ การปฏิเสธจะไม่ตัดสต็อกและไม่สามารถเปลี่ยนแปลงได้
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">เหตุผลในการปฏิเสธ <span style="color:var(--danger);">*</span></label>
+        <textarea name="reason" class="form-control" rows="3"
+                  placeholder="กรุณาระบุเหตุผล..." required style="resize:vertical;"></textarea>
+      </div>
+      <div class="flex gap-2 mt-4">
+        <button type="submit" class="btn btn-danger">❌ ยืนยันการปฏิเสธ</button>
+        <a href="{% url 'requisitions:detail' req.pk %}" class="btn btn-secondary">ยกเลิก</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

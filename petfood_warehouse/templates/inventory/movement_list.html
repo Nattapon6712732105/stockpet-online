@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block page_title %}ประวัติสต็อก{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">📋 ประวัติการเคลื่อนไหวสต็อก</span>
+    <a href="{% url 'reports:movements_csv' %}" class="btn btn-sm btn-outline">⬇️ ส่งออก CSV</a>
+  </div>
+  <div class="card-body">
+    <form method="get" class="search-bar">
+      <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="ค้นหาสินค้า/รหัสคำร้อง...">
+      <select name="type" class="form-control" style="max-width:160px;" onchange="this.form.submit()">
+        <option value="">ทุกประเภท</option>
+        {% for val, label in movement_types %}
+          <option value="{{ val }}" {% if mtype == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-secondary btn-sm">🔍 ค้นหา</button>
+    </form>
+
+    <div class="table-wrapper">
+      {% if movements %}
+        <table>
+          <thead>
+            <tr>
+              <th>วันที่</th>
+              <th>สินค้า</th>
+              <th>ประเภท</th>
+              <th style="text-align:right;">จำนวน</th>
+              <th style="text-align:right;">คงเหลือหลัง</th>
+              <th>คำร้อง</th>
+              <th>โดย</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for m in movements %}
+            <tr>
+              <td class="text-sm text-soft">{{ m.created_at|date:"j M Y H:i" }}</td>
+              <td>{{ m.product.name }}</td>
+              <td>
+                {% if m.movement_type == 'RECEIVE' %}
+                  <span class="badge badge-ok">📥 รับเข้า</span>
+                {% elif m.movement_type == 'ISSUE' %}
+                  <span class="badge badge-info">📤 เบิกออก</span>
+                {% else %}
+                  <span class="badge badge-secondary">🔧 ปรับ</span>
+                {% endif %}
+              </td>
+              <td class="qty-cell" style="text-align:right;{% if m.qty_change < 0 %}color:var(--danger){% else %}color:var(--ok){% endif %}">
+                {% if m.qty_change >= 0 %}+{% endif %}{{ m.qty_change }}
+              </td>
+              <td class="qty-cell" style="text-align:right;">{{ m.balance_after }}</td>
+              <td class="text-sm">
+                {% if m.request %}
+                  <a href="{% url 'requisitions:detail' m.request.pk %}">{{ m.request.code }}</a>
+                {% else %}—{% endif %}
+              </td>
+              <td class="text-sm text-soft">{{ m.by_user.get_full_name|default:m.by_user.username }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📋</div>
+          <div class="empty-title">ยังไม่มีประวัติการเคลื่อนไหว</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

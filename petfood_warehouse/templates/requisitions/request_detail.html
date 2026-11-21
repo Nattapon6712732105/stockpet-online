@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% block page_title %}{{ req.code }}{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:2fr 1fr;gap:20px;flex-wrap:wrap;">
+  <!-- รายละเอียดคำร้อง -->
+  <div>
+    <div class="card mb-4">
+      <div class="card-header">
+        <span class="card-title">📄 {{ req.code }}</span>
+        <span class="badge badge-{{ req.status_color }}">{{ req.get_status_display }}</span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" class="mb-4">
+          <div>
+            <div class="text-sm text-soft">สาขา</div>
+            <div><strong>{{ req.branch.name }}</strong></div>
+          </div>
+          <div>
+            <div class="text-sm text-soft">ผู้ยื่น</div>
+            <div>{{ req.requested_by.get_full_name|default:req.requested_by.username }}</div>
+          </div>
+          <div>
+            <div class="text-sm text-soft">วันที่ยื่น</div>
+            <div>{{ req.created_at|date:"j M Y H:i" }}</div>
+          </div>
+          {% if req.decided_by %}
+          <div>
+            <div class="text-sm text-soft">ผู้ตัดสินใจ</div>
+            <div>{{ req.decided_by.get_full_name|default:req.decided_by.username }}</div>
+          </div>
+          {% endif %}
+          {% if req.note %}
+          <div style="grid-column:span 2;">
+            <div class="text-sm text-soft">หมายเหตุ</div>
+            <div>{{ req.note }}</div>
+          </div>
+          {% endif %}
+          {% if req.reject_reason %}
+          <div style="grid-column:span 2;">
+            <div class="text-sm text-soft">เหตุผลปฏิเสธ</div>
+            <div style="color:var(--danger);">{{ req.reject_reason }}</div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- รายการสินค้า -->
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>สินค้า</th>
+                <th style="text-align:right;">ขอ</th>
+                <th style="text-align:right;">อนุมัติ</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in req.items.all %}
+              <tr>
+                <td>{{ item.product.name }}</td>
+                <td class="qty-cell" style="text-align:right;">
+                  {{ item.qty_requested }} {{ item.product.unit }}
+                </td>
+                <td class="qty-cell" style="text-align:right;">
+                  {% if item.qty_approved is not None %}
+                    <span style="color:{% if item.qty_approved == item.qty_requested %}var(--ok){% elif item.qty_approved == 0 %}var(--danger){% else %}var(--warn){% endif %};">
+                      {{ item.qty_approved }} {{ item.product.unit }}
+                    </span>
+                  {% else %}
+                    <span class="text-soft">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ปุ่มดำเนินการ -->
+    <div class="flex gap-2" style="flex-wrap:wrap;">
+      {% if user.is_admin and req.is_pending %}
+        <a href="{% url 'requisitions:approve' req.pk %}" class="btn btn-primary">✅ อนุมัติ</a>
+        <a href="{% url 'requisitions:reject' req.pk %}" class="btn btn-danger">❌ ปฏิเสธ</a>
+      {% endif %}
+      {% if req.is_pending and req.requested_by == user %}
+        <a href="{% url 'requisitions:cancel' req.pk %}" class="btn btn-outline">🚫 ยกเลิก</a>
+      {% endif %}
+      <a href="{% url 'requisitions:list' %}" class="btn btn-secondary">← กลับ</a>
+    </div>
+  </div>
+
+  <!-- ไทม์ไลน์ -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">⏱ ไทม์ไลน์</span></div>
+    <div class="card-body">
+      <ul class="timeline">
+        <li>
+          <strong>ยื่นคำร้อง</strong>
+          <div class="text-sm text-soft">{{ req.created_at|date:"j M Y H:i" }}</div>
+          <div class="text-sm">{{ req.requested_by.get_full_name|default:req.requested_by.username }}</div>
+        </li>
+        {% if req.decided_at %}
+        <li>
+          <strong>{{ req.get_status_display }}</strong>
+          <div class="text-sm text-soft">{{ req.decided_at|date:"j M Y H:i" }}</div>
+          {% if req.decided_by %}
+            <div class="text-sm">{{ req.decided_by.get_full_name|default:req.decided_by.username }}</div>
+          {% endif %}
+          {% if req.reject_reason %}
+            <div class="text-sm" style="color:var(--danger);">{{ req.reject_reason }}</div>
+          {% endif %}
+        </li>
+        {% else %}
+          <li>
+            <span class="badge badge-info">รออนุมัติ</span>
+          </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

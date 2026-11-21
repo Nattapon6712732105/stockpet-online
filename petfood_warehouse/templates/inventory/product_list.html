@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block page_title %}สินค้าในคลังกลาง{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">📦 สินค้าในคลังกลาง</span>
+    {% if user.is_admin %}
+      <div class="flex gap-2">
+        <a href="{% url 'inventory:receive_stock' %}" class="btn btn-sm btn-primary">📥 รับสินค้าเข้า</a>
+        <a href="{% url 'inventory:manage' %}" class="btn btn-sm btn-outline">⚙️ จัดการ</a>
+      </div>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <!-- ค้นหา/กรอง -->
+    <form method="get" class="search-bar">
+      <input type="text" name="q" value="{{ q }}" class="form-control"
+             placeholder="ค้นหาสินค้า..." id="product-search">
+      <select name="cat" class="form-control" style="max-width:160px;" onchange="this.form.submit()">
+        <option value="">ทุกหมวด</option>
+        {% for cat in categories %}
+          <option value="{{ cat.id }}" {% if cat_id == cat.id|stringformat:'s' %}selected{% endif %}>{{ cat.name }}</option>
+        {% endfor %}
+      </select>
+      <select name="status" class="form-control" style="max-width:140px;" onchange="this.form.submit()">
+        <option value="">ทุกสถานะ</option>
+        <option value="OK"   {% if status_filter == 'OK'   %}selected{% endif %}>🟢 ปกติ</option>
+        <option value="WARN" {% if status_filter == 'WARN' %}selected{% endif %}>🟡 ใกล้หมด</option>
+        <option value="EMPTY"{% if status_filter == 'EMPTY'%}selected{% endif %}>🔴 หมด</option>
+      </select>
+      <button type="submit" class="btn btn-secondary btn-sm">🔍 ค้นหา</button>
+      {% if q or cat_id or status_filter %}
+        <a href="{% url 'inventory:list' %}" class="btn btn-secondary btn-sm">✕ ล้าง</a>
+      {% endif %}
+    </form>
+
+    <div class="table-wrapper">
+      {% if stocks %}
+        <table>
+          <thead>
+            <tr>
+              <th>รหัสสินค้า</th>
+              <th>ชื่อสินค้า</th>
+              <th>หมวด</th>
+              <th>หน่วย</th>
+              <th style="text-align:right;">คงเหลือ</th>
+              <th style="text-align:right;">จุดสั่งซื้อ</th>
+              <th>สถานะ</th>
+              {% if not user.is_admin %}
+                <th></th>
+              {% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in stocks %}
+            <tr class="product-row" data-name="{{ s.product.name|lower }} {{ s.product.sku|lower }}">
+              <td class="text-sm text-soft">{{ s.product.sku }}</td>
+              <td><strong>{{ s.product.name }}</strong></td>
+              <td class="text-sm">{{ s.product.category.name }}</td>
+              <td class="text-sm">{{ s.product.unit }}</td>
+              <td class="qty-cell" style="text-align:right;">{{ s.quantity }}</td>
+              <td class="text-sm text-soft" style="text-align:right;">{{ s.product.min_stock }}</td>
+              <td>
+                {% if s.status == 'EMPTY' %}
+                  <span class="badge badge-danger">🔴 หมด</span>
+                {% elif s.status == 'WARN' %}
+                  <span class="badge badge-warn">🟡 ใกล้หมด</span>
+                {% else %}
+                  <span class="badge badge-ok">🟢 ปกติ</span>
+                {% endif %}
+              </td>
+              {% if not user.is_admin %}
+              <td>
+                <a href="{% url 'requisitions:create' %}?prefill={{ s.product.id }}"
+                   class="btn btn-sm btn-outline">เบิก</a>
+              </td>
+              {% endif %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📦</div>
+          <div class="empty-title">ไม่พบสินค้าที่ค้นหา</div>
+          <div class="empty-desc">ลองเปลี่ยนคำค้นหาหรือล้างตัวกรอง</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

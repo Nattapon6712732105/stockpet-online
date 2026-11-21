@@ -1,0 +1,146 @@
+{% load static %}<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}คลังอาหารสัตว์ ขุขันธ์{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/theme.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="app-layout">
+  <!-- Overlay สำหรับ mobile -->
+  <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 60 60" fill="none" width="36" height="36">
+          <g transform="translate(30,30)">
+            <ellipse cx="0" cy="-14" rx="6" ry="12" fill="none" stroke="#F3E3A3" stroke-width="1.8" transform="rotate(0)"/>
+            <ellipse cx="0" cy="-14" rx="6" ry="12" fill="none" stroke="#F3E3A3" stroke-width="1.8" transform="rotate(72)"/>
+            <ellipse cx="0" cy="-14" rx="6" ry="12" fill="none" stroke="#F3E3A3" stroke-width="1.8" transform="rotate(144)"/>
+            <ellipse cx="0" cy="-14" rx="6" ry="12" fill="none" stroke="#F3E3A3" stroke-width="1.8" transform="rotate(216)"/>
+            <ellipse cx="0" cy="-14" rx="6" ry="12" fill="none" stroke="#F3E3A3" stroke-width="1.8" transform="rotate(288)"/>
+            <circle cx="0" cy="0" r="4.5" fill="#D9B98A" stroke="#F3E3A3" stroke-width="1"/>
+            <circle cx="0" cy="0" r="2" fill="#F3E3A3"/>
+          </g>
+        </svg>
+        <div>
+          <div class="sidebar-logo-title">คลังอาหารสัตว์</div>
+          <div class="sidebar-logo-sub">· ขุขันธ์ ·</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      {% if user.is_authenticated %}
+        {% if user.is_admin %}
+          <div class="sidebar-section">ภาพรวม</div>
+          <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <span class="icon">🏠</span> แดชบอร์ด
+          </a>
+
+          <div class="sidebar-section">สต็อก</div>
+          <a href="{% url 'inventory:list' %}" class="nav-link {% if 'inventory' in request.path and 'receive' not in request.path and 'movements' not in request.path and 'manage' not in request.path %}active{% endif %}">
+            <span class="icon">📦</span> สินค้าในคลัง
+          </a>
+          <a href="{% url 'inventory:receive_stock' %}" class="nav-link {% if 'receive' in request.path %}active{% endif %}">
+            <span class="icon">📥</span> รับสินค้าเข้า
+          </a>
+          <a href="{% url 'inventory:movements' %}" class="nav-link {% if 'movements' in request.path %}active{% endif %}">
+            <span class="icon">📋</span> ประวัติสต็อก
+          </a>
+          <a href="{% url 'inventory:manage' %}" class="nav-link {% if 'manage' in request.path %}active{% endif %}">
+            <span class="icon">⚙️</span> จัดการสินค้า
+          </a>
+
+          <div class="sidebar-section">คำร้อง</div>
+          <a href="{% url 'requisitions:list' %}" class="nav-link {% if 'requisitions' in request.path %}active{% endif %}">
+            <span class="icon">📝</span> คำร้องทั้งหมด
+          </a>
+
+          <div class="sidebar-section">ระบบ</div>
+          <a href="{% url 'reports:home' %}" class="nav-link {% if 'reports' in request.path %}active{% endif %}">
+            <span class="icon">📊</span> รายงาน
+          </a>
+          <a href="/admin/" class="nav-link">
+            <span class="icon">🔧</span> จัดการระบบ
+          </a>
+        {% else %}
+          <div class="sidebar-section">หน้าหลัก</div>
+          <a href="{% url 'home' %}" class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
+            <span class="icon">🏠</span> หน้าหลัก
+          </a>
+
+          <div class="sidebar-section">สต็อก</div>
+          <a href="{% url 'inventory:list' %}" class="nav-link {% if 'inventory' in request.path %}active{% endif %}">
+            <span class="icon">📦</span> ดูสินค้าในคลัง
+          </a>
+
+          <div class="sidebar-section">คำร้อง</div>
+          <a href="{% url 'requisitions:create' %}" class="nav-link {% if 'new' in request.path %}active{% endif %}">
+            <span class="icon">➕</span> เบิกสินค้า
+          </a>
+          <a href="{% url 'requisitions:list' %}" class="nav-link {% if 'requisitions' in request.path and 'new' not in request.path %}active{% endif %}">
+            <span class="icon">📝</span> คำร้องของฉัน
+          </a>
+        {% endif %}
+      {% endif %}
+    </nav>
+
+    <div class="sidebar-footer">
+      {% if user.is_authenticated %}
+        <div>{{ user.get_full_name|default:user.username }}</div>
+        <div style="color:var(--sandstone);font-size:0.72rem;">
+          {% if user.branch %}{{ user.branch.name }}{% else %}คลังกลาง{% endif %}
+        </div>
+        <a href="{% url 'accounts:logout' %}" style="color:rgba(240,234,214,0.5);font-size:0.78rem;text-decoration:none;margin-top:6px;display:block;">
+          ออกจากระบบ
+        </a>
+      {% endif %}
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-content">
+    <header class="top-header">
+      <button class="hamburger" id="hamburger" aria-label="เปิดเมนู">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="3" y1="6" x2="19" y2="6"/>
+          <line x1="3" y1="11" x2="19" y2="11"/>
+          <line x1="3" y1="16" x2="19" y2="16"/>
+        </svg>
+      </button>
+      <div class="header-title">{% block page_title %}ระบบคลังสินค้าอาหารสัตว์{% endblock %}</div>
+      {% if user.is_authenticated %}
+        <div class="header-user">
+          <span class="badge-role">{{ user.get_role_display }}</span>
+          <span>{{ user.get_full_name|default:user.username }}</span>
+        </div>
+      {% endif %}
+    </header>
+
+    <main class="page-body">
+      {% if messages %}
+        {% for msg in messages %}
+          <div class="alert alert-{{ msg.tags }}">
+            <span>{% if msg.tags == 'success' %}✅{% elif msg.tags == 'danger' %}❌{% elif msg.tags == 'warning' %}⚠️{% else %}ℹ️{% endif %}</span>
+            <span>{{ msg }}</span>
+            <button class="alert-close" style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:1.1rem;color:inherit;">×</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+<script src="https://unpkg.com/htmx.org@1.9.10/dist/htmx.min.js" crossorigin="anonymous"
+  integrity="sha384-D1Kt99CQMDuVetoL1lrYwg5t+9QdHe7NLX/SoJYkXDFfX37iInKRy5ViYgSibmK"></script>
+<script src="{% static 'js/app.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

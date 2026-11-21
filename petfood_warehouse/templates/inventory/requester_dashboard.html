@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block page_title %}หน้าหลัก{% endblock %}
+
+{% block content %}
+{% if not user.branch %}
+  <div class="alert alert-warning">⚠️ บัญชีของคุณยังไม่ได้ผูกกับสาขา กรุณาติดต่อผู้ดูแลระบบ</div>
+{% else %}
+  <!-- ปุ่มเบิกสินค้าใหญ่ -->
+  <div style="margin-bottom:24px;">
+    <a href="{% url 'requisitions:create' %}" class="btn btn-primary btn-lg" style="font-size:1.1rem;padding:16px 32px;">
+      ➕ เบิกสินค้า
+    </a>
+  </div>
+
+  <!-- สรุปคำร้อง -->
+  <div class="summary-grid" style="margin-bottom:24px;">
+    <div class="summary-card info">
+      <div class="number">{{ pending_my }}</div>
+      <div class="label">📝 รออนุมัติ</div>
+    </div>
+  </div>
+
+  <!-- คำร้องล่าสุด -->
+  <div class="card mb-4">
+    <div class="card-header">
+      <span class="card-title">📝 คำร้องล่าสุด — {{ user.branch.name }}</span>
+      <a href="{% url 'requisitions:list' %}" class="btn btn-sm btn-outline">ดูทั้งหมด</a>
+    </div>
+    <div class="card-body" style="padding:0;">
+      {% if my_requests %}
+        <table>
+          <thead>
+            <tr>
+              <th>รหัส</th>
+              <th>วันที่</th>
+              <th>สถานะ</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for req in my_requests %}
+            <tr>
+              <td><strong>{{ req.code }}</strong></td>
+              <td class="text-sm text-soft">{{ req.created_at|date:"j M Y" }}</td>
+              <td>
+                <span class="badge badge-{{ req.status_color }}">
+                  {{ req.get_status_display }}
+                </span>
+              </td>
+              <td>
+                <a href="{% url 'requisitions:detail' req.pk %}" class="btn btn-sm btn-secondary">ดู</a>
+                {% if req.is_pending %}
+                  <a href="{% url 'requisitions:cancel' req.pk %}" class="btn btn-sm btn-outline">ยกเลิก</a>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📝</div>
+          <div class="empty-title">ยังไม่มีคำร้องในขณะนี้</div>
+          <div class="empty-desc">กดปุ่ม "เบิกสินค้า" เพื่อยื่นคำร้องใหม่</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

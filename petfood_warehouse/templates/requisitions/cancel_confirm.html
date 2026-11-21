@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block page_title %}ยกเลิกคำร้อง{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:450px;">
+  <div class="card-header">
+    <span class="card-title">🚫 ยืนยันการยกเลิก</span>
+  </div>
+  <div class="card-body">
+    <div class="alert alert-warning mb-4">
+      ⚠️ คุณกำลังจะยกเลิกคำร้อง <strong>{{ req.code }}</strong><br>
+      การยกเลิกไม่สามารถเปลี่ยนกลับได้
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <div class="flex gap-2">
+        <button type="submit" class="btn btn-danger">🚫 ยืนยันยกเลิก</button>
+        <a href="{% url 'requisitions:detail' req.pk %}" class="btn btn-secondary">ไม่ยกเลิก</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

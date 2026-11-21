@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block page_title %}คำร้องทั้งหมด{% endblock %}
+
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <span class="card-title">📝 คำร้องขอเบิก{% if not user.is_admin %} — {{ user.branch.name }}{% endif %}</span>
+    {% if not user.is_admin %}
+      <a href="{% url 'requisitions:create' %}" class="btn btn-primary btn-sm">➕ เบิกสินค้า</a>
+    {% endif %}
+  </div>
+  <div class="card-body">
+    <!-- กรอง -->
+    <form method="get" class="search-bar">
+      <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="ค้นหารหัส/ผู้ยื่น...">
+      <select name="status" class="form-control" style="max-width:160px;" onchange="this.form.submit()">
+        <option value="">ทุกสถานะ</option>
+        {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      {% if user.is_admin and branches %}
+        <select name="branch" class="form-control" style="max-width:160px;" onchange="this.form.submit()">
+          <option value="">ทุกสาขา</option>
+          {% for b in branches %}
+            <option value="{{ b.id }}" {% if branch_filter == b.id|stringformat:'s' %}selected{% endif %}>{{ b.name }}</option>
+          {% endfor %}
+        </select>
+      {% endif %}
+      <button type="submit" class="btn btn-secondary btn-sm">🔍 ค้นหา</button>
+    </form>
+
+    <div class="table-wrapper">
+      {% if requests %}
+        <table>
+          <thead>
+            <tr>
+              <th>รหัส</th>
+              <th>สาขา</th>
+              <th>ผู้ยื่น</th>
+              <th>วันที่</th>
+              <th>สถานะ</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for req in requests %}
+            <tr>
+              <td><strong>{{ req.code }}</strong></td>
+              <td>{{ req.branch.name }}</td>
+              <td class="text-sm">{{ req.requested_by.get_full_name|default:req.requested_by.username }}</td>
+              <td class="text-sm text-soft">{{ req.created_at|date:"j M Y" }}</td>
+              <td><span class="badge badge-{{ req.status_color }}">{{ req.get_status_display }}</span></td>
+              <td>
+                <a href="{% url 'requisitions:detail' req.pk %}" class="btn btn-sm btn-secondary">ดู</a>
+                {% if user.is_admin and req.is_pending %}
+                  <a href="{% url 'requisitions:approve' req.pk %}" class="btn btn-sm btn-primary">อนุมัติ</a>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📝</div>
+          <div class="empty-title">ยังไม่มีคำร้องในขณะนี้</div>
+          {% if not user.is_admin %}
+            <div class="empty-desc"><a href="{% url 'requisitions:create' %}">➕ เบิกสินค้าเลย</a></div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

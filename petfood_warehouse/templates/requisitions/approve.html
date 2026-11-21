@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block page_title %}อนุมัติคำร้อง {{ req.code }}{% endblock %}
+
+{% block content %}
+<form method="post">
+  {% csrf_token %}
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">✅ อนุมัติคำร้อง — {{ req.code }}</span>
+      <span class="text-sm text-soft">{{ req.branch.name }} | {{ req.requested_by.get_full_name|default:req.requested_by.username }}</span>
+    </div>
+    <div class="card-body">
+      {% if req.note %}
+        <div class="alert alert-info mb-4">📝 หมายเหตุจากผู้ขอ: {{ req.note }}</div>
+      {% endif %}
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>สินค้า</th>
+              <th style="text-align:right;">คลังกลาง</th>
+              <th style="text-align:right;">ขอ</th>
+              <th style="text-align:center;min-width:130px;">อนุมัติ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in items_with_stock %}
+            {% with item=row.item cs=row.central_stock %}
+            <tr {% if cs and cs.quantity == 0 %}style="background:var(--danger-bg);"{% endif %}>
+              <td>
+                <strong>{{ item.product.name }}</strong>
+                <div class="text-sm text-soft">{{ item.product.unit }}</div>
+              </td>
+              <td class="qty-cell" style="text-align:right;">
+                {% if cs %}
+                  <span {% if cs.quantity < item.qty_requested %}style="color:var(--danger);"{% endif %}>
+                    {{ cs.quantity }}
+                  </span>
+                {% else %}—{% endif %}
+              </td>
+              <td class="qty-cell" style="text-align:right;">{{ item.qty_requested }}</td>
+              <td style="text-align:center;">
+                <input type="number" name="approved_{{ item.id }}"
+                       class="form-control qty-input"
+                       value="{{ item.qty_requested }}"
+                       min="0" max="{{ item.qty_requested }}"
+                       style="width:90px;margin:auto;">
+              </td>
+            </tr>
+            {% endwith %}
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex gap-2 mt-4" style="flex-wrap:wrap;">
+    <button type="submit" class="btn btn-primary btn-lg">✅ อนุมัติ</button>
+    <a href="{% url 'requisitions:reject' req.pk %}" class="btn btn-danger">❌ ปฏิเสธ</a>
+    <a href="{% url 'requisitions:detail' req.pk %}" class="btn btn-secondary">← ยกเลิก</a>
+  </div>
+</form>
+{% endblock %}

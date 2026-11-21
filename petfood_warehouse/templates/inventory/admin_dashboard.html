@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+{% block page_title %}แดชบอร์ดผู้ดูแล{% endblock %}
+
+{% block content %}
+{% load inventory_tags %}
+<h2 style="font-family:'Prompt',sans-serif;font-size:1.3rem;margin-bottom:20px;">
+  ภาพรวมระบบ
+</h2>
+
+<!-- Summary Cards -->
+<div class="summary-grid">
+  <div class="summary-card info">
+    <div class="number">{{ pending_count }}</div>
+    <div class="label">📝 คำร้องรออนุมัติ</div>
+  </div>
+  <div class="summary-card danger">
+    <div class="number">{{ empty_count }}</div>
+    <div class="label">🔴 สินค้าหมด</div>
+  </div>
+  <div class="summary-card warn">
+    <div class="number">{{ low_count }}</div>
+    <div class="label">🟡 ใกล้หมด</div>
+  </div>
+  <div class="summary-card ok">
+    <div class="number">{{ movements_today }}</div>
+    <div class="label">📋 เคลื่อนไหววันนี้</div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1.5fr;gap:20px;flex-wrap:wrap;">
+  <!-- คำร้องรออนุมัติ -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📝 คำร้องรออนุมัติ</span>
+      <a href="{% url 'requisitions:list' %}?status=PENDING" class="btn btn-sm btn-outline">ดูทั้งหมด</a>
+    </div>
+    <div class="card-body" style="padding:0;">
+      {% if pending_requests %}
+        <table>
+          <thead>
+            <tr>
+              <th>รหัส</th>
+              <th>สาขา</th>
+              <th>วันที่</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for req in pending_requests %}
+            <tr>
+              <td><strong>{{ req.code }}</strong></td>
+              <td>{{ req.branch.name }}</td>
+              <td class="text-sm text-soft">{{ req.created_at|date:"j M Y" }}</td>
+              <td>
+                <a href="{% url 'requisitions:approve' req.pk %}" class="btn btn-sm btn-primary">อนุมัติ</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">✅</div>
+          <div class="empty-title">ไม่มีคำร้องรออนุมัติ</div>
+          <div class="empty-desc">ทุกอย่างเรียบร้อยดี</div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- สต็อกคลังกลาง -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">📦 สต็อกคลังกลาง</span>
+      <a href="{% url 'inventory:list' %}" class="btn btn-sm btn-outline">ดูทั้งหมด</a>
+    </div>
+    <div class="card-body" style="padding:0;">
+      {% if stock_list %}
+        <table>
+          <thead>
+            <tr>
+              <th>สินค้า</th>
+              <th>คงเหลือ</th>
+              <th>สถานะ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in stock_list|slice:":12" %}
+            <tr>
+              <td>{{ s.product.name }}</td>
+              <td class="qty-cell">{{ s.quantity }} <span class="text-soft text-sm">{{ s.product.unit }}</span></td>
+              <td>
+                {% if s.status == 'EMPTY' %}
+                  <span class="badge badge-danger">🔴 หมด</span>
+                {% elif s.status == 'WARN' %}
+                  <span class="badge badge-warn">🟡 ใกล้หมด</span>
+                {% else %}
+                  <span class="badge badge-ok">🟢 ปกติ</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📦</div>
+          <div class="empty-title">ยังไม่มีสินค้าในระบบ</div>
+          <div class="empty-desc"><a href="{% url 'inventory:manage' %}">เพิ่มสินค้า</a></div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block page_title %}จัดการสินค้า{% endblock %}
+
+{% block content %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;flex-wrap:wrap;">
+  <!-- เพิ่มสินค้า -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">➕ เพิ่มสินค้าใหม่</span></div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add">
+        <div class="form-group">
+          <label class="form-label">รหัสสินค้า (SKU)</label>
+          <input type="text" name="sku" class="form-control" placeholder="เช่น DOG-001" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ชื่อสินค้า</label>
+          <input type="text" name="name" class="form-control" placeholder="เช่น อาหารสุนัข A" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">หมวดหมู่</label>
+          <select name="category" class="form-control" required>
+            <option value="">-- เลือกหมวด --</option>
+            {% for c in categories %}
+              <option value="{{ c.id }}">{{ c.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">หน่วยนับ</label>
+          <input type="text" name="unit" class="form-control" placeholder="เช่น ถุง, กระสอบ, ชิ้น" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">จุดสั่งซื้อ (ใกล้หมด)</label>
+          <input type="number" name="min_stock" class="form-control" value="10" min="0">
+        </div>
+        <button type="submit" class="btn btn-primary">➕ เพิ่มสินค้า</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- เพิ่มหมวด -->
+  <div class="card">
+    <div class="card-header"><span class="card-title">🏷️ เพิ่มหมวดหมู่</span></div>
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="add_category">
+        <div class="form-group">
+          <label class="form-label">ชื่อหมวด</label>
+          <input type="text" name="cat_name" class="form-control" placeholder="เช่น อาหารสุนัข" required>
+        </div>
+        <button type="submit" class="btn btn-primary">➕ เพิ่มหมวด</button>
+      </form>
+
+      <hr style="border:none;border-top:1px solid var(--line);margin:16px 0;">
+      <strong>หมวดที่มีอยู่:</strong>
+      <ul style="margin-top:8px;padding-left:20px;">
+        {% for c in categories %}
+          <li>{{ c.name }}</li>
+        {% empty %}
+          <li class="text-soft">ยังไม่มีหมวด</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- รายการสินค้า -->
+<div class="card mt-4">
+  <div class="card-header"><span class="card-title">📦 รายการสินค้าทั้งหมด</span></div>
+  <div class="card-body" style="padding:0;">
+    {% if products %}
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>SKU</th>
+              <th>ชื่อสินค้า</th>
+              <th>หมวด</th>
+              <th>หน่วย</th>
+              <th>จุดสั่งซื้อ</th>
+              <th style="text-align:right;">คงเหลือ</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in products %}
+            <tr>
+              <td class="text-sm text-soft">{{ p.sku }}</td>
+              <td><strong>{{ p.name }}</strong></td>
+              <td class="text-sm">{{ p.category.name }}</td>
+              <td class="text-sm">{{ p.unit }}</td>
+              <td class="text-sm">{{ p.min_stock }}</td>
+              <td class="qty-cell" style="text-align:right;">
+                {% if p.central_stock %}{{ p.central_stock.quantity }}{% else %}0{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">📦</div>
+        <div class="empty-title">ยังไม่มีสินค้า</div>
+        <div class="empty-desc">เพิ่มสินค้าด้านบน</div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

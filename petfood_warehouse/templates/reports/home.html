@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block page_title %}รายงาน{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width:500px;">
+  <div class="card-header"><span class="card-title">📊 รายงาน</span></div>
+  <div class="card-body">
+    <div class="flex flex-col gap-3">
+      <a href="{% url 'reports:movements_csv' %}" class="btn btn-outline" style="justify-content:flex-start;">
+        ⬇️ ส่งออกประวัติสต็อก (CSV)
+      </a>
+      <a href="{% url 'inventory:movements' %}" class="btn btn-outline" style="justify-content:flex-start;">
+        📋 ดูประวัติสต็อกออนไลน์
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
