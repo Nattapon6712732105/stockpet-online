@@ -172,3 +172,13 @@ class ApproveRequestTest(TestCase):
         from apps.requisitions.services import issue_stock
         with self.assertRaises(ValidationError):
             issue_stock(self.product.id, 500, self.admin, note='เกินสต็อก')
+
+    def test_requester_dashboard_view_no_slice_error(self):
+        """แดชบอร์ดผู้ยื่นคำร้องต้องโหลดได้โดยไม่มีข้อผิดพลาด QuerySet slice"""
+        from django.test import RequestFactory
+        from apps.inventory.views_home import home
+        factory = RequestFactory()
+        request = factory.get('/')
+        request.user = self.requester
+        response = home(request)
+        self.assertEqual(response.status_code, 200)

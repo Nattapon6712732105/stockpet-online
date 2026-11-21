@@ -57,9 +57,9 @@ def _requester_dashboard(request):
         messages.warning(request, 'บัญชีของคุณยังไม่ได้ผูกกับสาขา กรุณาติดต่อผู้ดูแล')
         return render(request, 'inventory/requester_dashboard.html', {})
 
-    my_requests = RequisitionRequest.objects.filter(
-        branch=user.branch
-    ).select_related('decided_by').prefetch_related('items')[:10]
+    base_requests = RequisitionRequest.objects.filter(branch=user.branch)
+    pending_my = base_requests.filter(status=RequisitionRequest.Status.PENDING).count()
+    my_requests = base_requests.select_related('decided_by').prefetch_related('items')[:10]
 
     # สินค้าใกล้หมดในสาขา
     from apps.inventory.models import BranchStock
@@ -72,6 +72,6 @@ def _requester_dashboard(request):
     context = {
         'my_requests': my_requests,
         'low_branch': low_branch,
-        'pending_my': my_requests.filter(status='PENDING').count() if my_requests else 0,
+        'pending_my': pending_my,
     }
     return render(request, 'inventory/requester_dashboard.html', context)
