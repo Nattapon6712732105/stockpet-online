@@ -14,7 +14,7 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-khukhan-petfood-secret-key-change-in-prod')
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = config('DEBUG', default=True, cast=bool)
 
 # Allowed Hosts & CSRF
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
@@ -83,10 +83,16 @@ if DATABASE_URL:
         )
     }
 else:
+    # On Vercel Serverless, filesystem is read-only except /tmp
+    if os.environ.get('VERCEL'):
+        db_path = Path('/tmp/db.sqlite3')
+    else:
+        db_path = BASE_DIR / 'db.sqlite3'
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': db_path,
         }
     }
 
