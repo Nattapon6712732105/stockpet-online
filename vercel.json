@@ -1,14 +1,30 @@
 {
-  "buildCommand": "bash build_files.sh",
-  "outputDirectory": "petfood_warehouse/staticfiles",
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/static/(.*)",
-      "destination": "/static/$1"
+      "src": "build_files.sh",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "petfood_warehouse/staticfiles"
+      }
     },
     {
-      "source": "/(.*)",
-      "destination": "/api/index.py"
+      "src": "petfood_warehouse/config/wsgi.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "15mb",
+        "runtime": "python3.12"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "petfood_warehouse/config/wsgi.py"
     }
   ]
 }
